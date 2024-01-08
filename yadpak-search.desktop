@@ -1,0 +1,30 @@
+[Desktop Entry]
+Type=Application
+Name=Yadpak Search
+Icon=application-vnd.flatpak.ref
+Exec=yadpak search %c --title %c --regex-search --search-column=3
+Path=/tmp
+Terminal=true
+# Actions=Desc;App;UserName;UserDesc;UserApp;
+Actions=UserName;
+Categories=Settings;
+
+[Desktop Action Desc]
+Name=Yadpak Search (Description)
+Exec=yadpak search %c --title %c --regex-search --search-column=4
+
+[Desktop Action App]
+Name=Yadpak Search (Appication ID)
+Exec=yadpak search %c --title %c --regex-search --search-column=5
+
+[Desktop Action UserName]
+Name=Yadpak User Search
+Exec=env YADPAK_DIR='--user' yadpak search %c --title %c --regex-search --search-column=3
+
+[Desktop Action UserDesc]
+Name=Yadpak User Search (Description)
+Exec=env YADPAK_DIR='--user' yadpak search %c --title %c --regex-search --search-column=4
+
+[Desktop Action UserApp]
+Name=Yadpak User Search (Appication ID)
+Exec=env YADPAK_DIR='--user' yadpak search %c --title %c --regex-search --search-column=5

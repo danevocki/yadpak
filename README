@@ -1,0 +1,7 @@
+Bash script using YAD (Yet Another Dialog) to install, update, uninstall and
+search for, Flatpaks. Manually update Appstream data. Uses translations. Opens
+HTML page from Appstream catalog when row double clicked, except for search.
+Command terminal used to execute Flatpak command for selected Flatpaks.
+
+Works on Fedora 37 and 38.
+Requires yad.

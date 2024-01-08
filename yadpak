@@ -1,0 +1,116 @@
+#!/bin/bash
+# Copyright (C) 2023 Daniel Miedzyblocki
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# Icon=application-vnd.flatpak.ref  # package-x-generic
+# Exec=yadpak {COMMAND} %c --title %c --regex-search --search-column=4
+# Path=/tmp
+#
+# YADPAK_DIR='--user'; YADPAK_ARC='--arch=ARCH'
+# YADPAK='--assumeyes --app --runtime --no-related'
+# YADPAK_ADD="$YADPAK --reinstall --or-update --include-sdk --include-debug"
+# YADPAK_UPD="$YADPAK --force-remove"; YADPAK_DEL="$YADPAK --delete-data"
+# YADPAK_LST='--app --runtime --all"
+# YADPAK_REP='--width=W --height=H'; YADPAK_TXT='--width=W --height=H'
+# YADPAK_YAD='--width=W --height=H --pulsate --dclick-action= --window-icon=
+#   /usr/share/icons/breeze/mimetypes/16/application-vnd.flatpak.ref.svg'
+
+export TEXTDOMAIN='flatpak'
+shopt -s extglob
+
+query() # query fd {--title=TITLE|--} {FLATPAK_CMD} [flatpak-option...]
+{
+  coproc flatpak --verbose "${@:3}" 3>&"$1" 2>&1 1>&3
+  cmd="--progress ${YADPAK_YAD-'--pulsate'} --hide-text --auto-close"
+  yad $cmd --width=-1 --height=-1 --center "$2" <&"$COPROC"
+  kill "$COPROC_PID" &> /dev/null
+}
+
+app="--${2:+"title=$2"}"
+qry='--columns=ref,name,description,app,version,branch,arch,origin'
+qry=( ${YADPAK_DIR='--system'} $YADPAK_ARC $YADPAK_LST "$qry" )
+col=( Ref Name Description 'Application ID' Version Branch Arch Origin )
+opt="--dclick-action=appstream-id '$YADPAK_DIR' 14 13 7 10"
+act=( 'install' $YADPAK_DIR $YADPAK_ARC $YADPAK_ADD )
+case "$1" in
+  *) shift 2;;&
+  'appstream') # yadpak appstream TITLE {REMOTE|--}
+    query 1 "$app" update $YADPAK_DIR $YADPAK_ARC --appstream "$1"
+    exit 0
+    ;;
+  'install')
+    msg=$"Remotes"
+    [ -v YADPAK_C ] && [[ "$msg" =~ '!' ]] && msg='Remotes'
+    msg="--column=${msg//'!'/$'\ufffd'}!:TEXT"
+
+    cmd="yad --list $YADPAK_YAD --width=-1 --height=250 --no-markup"
+    cmd="$cmd $YADPAK_REP --separator= --search-column=1"
+    out="${YADPAK_REM-"`flatpak remotes $YADPAK_DIR --columns=name`"}"
+    [[ "$out" =~ $'\n' ]] && { out="`$cmd "$app" "$msg" <<< "$out"`" || exit 0;}
+
+    qry=( 'remote-ls' "${qry[@]}" "${out:="--"}" )
+    act=( "${act[@]}" "$out" )
+    ;;
+  'update') # Update fails if remote-info Commit matches info Alt-id (fedora).
+    qry=( 'remote-ls' '--updates' "${qry[@]}" )
+    act=( 'update' $YADPAK_DIR $YADPAK_ARC $YADPAK_UPD )
+    ;;
+  'uninstall')
+    qry=( 'list' "${qry[@]}" )
+    act=( 'uninstall' $YADPAK_DIR $YADPAK_ARC $YADPAK_DEL )
+    # unset opt # When appstream-id handles full REF only.
+    ;;
+  'search')
+    scr='s%\t%//%'
+    cmd="yad --entry $YADPAK_YAD --width=-1 --height=-1 --ricon=edit-clear"
+    qry="`$cmd "$app" --button=yad-cancel:1 --button=yad-search:0`" || exit 0
+    opt='--columns=app,branch,name,description,app,version,branch,remotes'
+    qry=( 'search' $YADPAK_DIR $YADPAK_ARC "$opt" "${qry##*(-)}" )
+    col=( "${col[@]:0:6}" 'Remotes' )
+    unset opt
+    ;;
+  *) exit 1;;
+esac
+
+qry=( "`query 2 "$app" "${qry[@]}" 2>&1`" )
+exp='^([^\t]*\t){7}[^\t]*$' # exp="^([^\t]*\t){$sep}[^\t]*$"
+out="`LANG=C sed -E "/$exp"$'|^\e/d' <<< "$qry"`"
+YADPAK_TXT="yad --text-info $YADPAK_YAD --width=500 --height=500 $YADPAK_TXT"
+cmd="$YADPAK_TXT --window-icon=dialog-information --button=yad-close"
+[ -n "$out" ] && $cmd --text=$"Ref" "$app" <<< "$out"
+
+for i in "${!col[@]}"
+do
+  msg="`gettext "$TEXTDOMAIN" "${col[$i]}"`"
+  [ -v YADPAK_C ] && [[ "$msg" =~ '!' ]] && msg="${col[$i]}"
+  col[$i]="--column=${msg//'!'/$'\ufffd'}!:TEXT"
+done
+
+# dclick-action doesn't assign parameters for description or version if blank.
+exp="/$exp/!d; $scr; y/\t/\n/; s/\n{2}/\n \n/g; i\FALSE"
+qry="`LANG=C sed -E "$exp" <<< "$qry"`"
+[ -n "$out" -a -z "$qry" ] && exit
+cmd="--list --checklist --no-markup --width=900 --height=900 $YADPAK_YAD"
+cmd="$cmd --separator= --print-column=2 --hide-column=2 --column="
+cmd="$cmd --button=yad-cancel:1 --button=yad-apply:0" # --button=yad-close:1
+qry="`yad "${opt[@]}" $cmd "$app" "$@" "${col[@]}" <<< "$qry"`"
+
+[ -n "$qry" ] && while $YADPAK_TXT --text=$"Ref" "$app" <<< "$qry"
+do
+  # YAD reads null terminated and newline rows. Can't set separator to null.
+  # xargs -d '\n' -a <(cat <<< "$qry") flatpak "${act[@]}" || continue
+  xargs -od '\n' flatpak "${act[@]}" <<< "$qry" || continue
+  read -sn1
+  break
+done

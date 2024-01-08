@@ -1,0 +1,57 @@
+#!/bin/bash
+# Copyright (C) 2023 Daniel Miedzyblocki
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# appstream-id <-u|--user|--system ...> ORIGIN ARCH REF ID COLUMN...
+# ASCAT_TMP="$XDG_RUNTIME_DIR"
+
+: ${ASCAT_LOG='/dev/null'}
+exec 1>> "${ASCAT_LOG:-/dev/stdout}" 2>> "${ASCAT_LOG:-/dev/stderr}"
+echo "2:${!2}, 3:${!3}, 4:${!4}, 5:${!5}"
+
+case "$1--system" in # System as default.
+  --system*) xml='/var/lib/flatpak/appstream';;
+  --user* | -u*) xml="$XDG_DATA_HOME/flatpak/appstream";;
+esac
+
+name="appstream.xml"
+# for xml in "$xml/${!2}/${!3}/"{{'active/',}"$name",{'active/',}"$name.gz"} ''
+for xml in "$xml/${!2}/${!3}/"{'active/',}{"$name","$name.gz"} ''
+do # Ordered by fastest
+  # [ -f "$xml" ] && xml="`gzip -cdf "$xml"`" && break # Fails if tags collapsed
+  [ -f "$xml" ] && xml="`xmllint --format "$xml"`" && break
+  #[ -f "$xml" ] && xml="`appstream-util dump "$xml"`" && break
+done
+
+name="${ASID_TMP:-"$PWD"}/`basename "$0"`"
+mkdir -pm 777 "$name" && cd "$name"
+printf -v name "${!5}_%(%F_%T)T" -1
+
+sed '/^<components/q' <<< "$xml" > "$name.xml"
+# exp="/components/component[bundle[@type='flatpak']='${!4}']" # Full REF only
+exp="/components/component[contains(bundle[@type='flatpak']/text(),'${!4}')]"
+xmllint --xpath "$exp" - <<< "$xml" >> "$name.xml"
+# Without component type desktop, status-html fails
+echo '<component type="desktop-application"><id>null</id>' >> "$name.xml"
+echo '</component></components>' >> "$name.xml"
+
+appstream-util status-html "$name.xml" "$name.html"
+rm -f "$name.xml"
+printf -v scr '1,/^<%s/{/^<%s/d}; ' {h1,h1,h2,br}{,}
+exp='{\n\tdisplay: none;\n}'
+scr="$scr/^<style/a\table.summary $exp\n#app-null $exp"
+# sed -i "${ASID_SED-"$scr"}" "$name.html"
+cat <<< "`sed "${ASID_SED-"$scr"}" "$name.html"`" > "$name.html"
+# Terminal close, Terminal=true, terminates new browser instance.
+xdg-open "file://$PWD/$name.html"

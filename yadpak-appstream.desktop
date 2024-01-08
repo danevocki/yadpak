@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Yadpak Update Appstream
+Icon=application-vnd.flatpak.ref
+# Exec=env YADPAK_DIR='--system --user' yadpak appstream %c --
+Exec=yadpak appstream %c --
+Path=/tmp
+Terminal=false
+Actions=User;
+Categories=Settings;
+
+[Desktop Action User]
+Name=Yadpak User Update Appstream
+Exec=env YADPAK_DIR='--user' yadpak appstream %c --
