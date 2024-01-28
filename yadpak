@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2023 Daniel Miedzyblocki
+# Copyright (C) 2023, 2024 Daniel Miedzyblocki
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -22,9 +22,11 @@
 # YADPAK_ADD="$YADPAK --reinstall --or-update --include-sdk --include-debug"
 # YADPAK_UPD="$YADPAK --force-remove"; YADPAK_DEL="$YADPAK --delete-data"
 # YADPAK_LST='--app --runtime --all"
-# YADPAK_REP='--width=W --height=H'; YADPAK_TXT='--width=W --height=H'
-# YADPAK_YAD='--width=W --height=H --pulsate --dclick-action= --window-icon=
+# YADPAK_REP='--width=W --height=H' --center; YADPAK_TXT='--width=W --height=H'
+# YADPAK_YAD='--width=W --height=H --pulsate --dclick-action=
+#   --regex-search --window-icon=
 #   /usr/share/icons/breeze/mimetypes/16/application-vnd.flatpak.ref.svg'
+# ln -sT /usr/share/icons/breeze /home/dan/.local/share/icons/Adwaita
 
 export TEXTDOMAIN='flatpak'
 shopt -s extglob
@@ -73,8 +75,9 @@ case "$1" in
     ;;
   'search')
     scr='s%\t%//%'
-    cmd="yad --entry $YADPAK_YAD --width=-1 --height=-1 --ricon=edit-clear"
-    qry="`$cmd "$app" --button=yad-cancel:1 --button=yad-search:0`" || exit 0
+    cmd="yad --entry $YADPAK_YAD --width=-1 --height=-1 --center"
+    cmd="$cmd --button=yad-cancel:1 --button=yad-search:0 --ricon=edit-clear"
+    qry="`$cmd "$app"`" || exit 0
     opt='--columns=app,branch,name,description,app,version,branch,remotes'
     qry=( 'search' $YADPAK_DIR $YADPAK_ARC "$opt" "${qry##*(-)}" )
     col=( "${col[@]:0:6}" 'Remotes' )

@@ -2,7 +2,7 @@
 Type=Application
 Name=Yadpak Install
 Icon=application-vnd.flatpak.ref
-Exec=yadpak install %c --title %c --regex-search --search-column=3
+Exec=yadpak install %c --title %c --search-column=3
 Path=/tmp
 Terminal=true
 # Actions=Desc;App;UserName;UserDesc;UserApp;
@@ -11,20 +11,20 @@ Categories=Settings;
 
 [Desktop Action Desc]
 Name=Yadpak Install (Description)
-Exec=yadpak install %c --title %c --regex-search --search-column=4
+Exec=yadpak install %c --title %c --search-column=4
 
 [Desktop Action App]
 Name=Yadpak Install (Appication ID)
-Exec=yadpak install %c --title %c --regex-search --search-column=5
+Exec=yadpak install %c --title %c --search-column=5
 
 [Desktop Action UserName]
 Name=Yadpak User Install
-Exec=env YADPAK_DIR='--user' yadpak install %c --title %c --regex-search --search-column=3
+Exec=env YADPAK_DIR='--user' yadpak install %c --title %c --search-column=3
 
 [Desktop Action UserDesc]
 Name=Yadpak User Install (Description)
-Exec=env YADPAK_DIR='--user' yadpak install %c --title %c --regex-search --search-column=4
+Exec=env YADPAK_DIR='--user' yadpak install %c --title %c --search-column=4
 
 [Desktop Action UserApp]
 Name=Yadpak User Install (Appication ID)
-Exec=env YADPAK_DIR='--user' yadpak install %c --title %c --regex-search --search-column=5
+Exec=env YADPAK_DIR='--user' yadpak install %c --title %c --search-column=5
