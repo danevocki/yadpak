@@ -22,7 +22,7 @@
 # YADPAK_ADD="$YADPAK --reinstall --or-update --include-sdk --include-debug"
 # YADPAK_UPD="$YADPAK --force-remove"; YADPAK_DEL="$YADPAK --delete-data"
 # YADPAK_LST='--app --runtime --all"
-# YADPAK_REP='--width=W --height=H' --center; YADPAK_TXT='--width=W --height=H'
+# YADPAK_REP='--width=W --height=H --center'; YADPAK_TXT='--width=W --height=H'
 # YADPAK_YAD='--width=W --height=H --pulsate --dclick-action=
 #   --regex-search --window-icon=
 #   /usr/share/icons/breeze/mimetypes/16/application-vnd.flatpak.ref.svg'
@@ -59,7 +59,7 @@ case "$1" in
     cmd="yad --list $YADPAK_YAD --width=-1 --height=250 --no-markup"
     cmd="$cmd $YADPAK_REP --separator= --search-column=1"
     out="${YADPAK_REM-"`flatpak remotes $YADPAK_DIR --columns=name`"}"
-    [[ "$out" =~ $'\n' ]] && { out="`$cmd "$app" "$msg" <<< "$out"`" || exit 0;}
+    [[ "$out" =~ $'\n' ]] && { out="`$cmd "$msg" "$app" <<< "$out"`" || exit 0;}
 
     qry=( 'remote-ls' "${qry[@]}" "${out:="--"}" )
     act=( "${act[@]}" "$out" )
@@ -107,7 +107,7 @@ qry="`LANG=C sed -E "$exp" <<< "$qry"`"
 cmd="--list --checklist --no-markup --width=900 --height=900 $YADPAK_YAD"
 cmd="$cmd --separator= --print-column=2 --hide-column=2 --column="
 cmd="$cmd --button=yad-cancel:1 --button=yad-apply:0" # --button=yad-close:1
-qry="`yad "${opt[@]}" $cmd "$app" "$@" "${col[@]}" <<< "$qry"`"
+qry="`yad "${opt[@]}" $cmd "$@" "${col[@]}" "$app" <<< "$qry"`"
 
 [ -n "$qry" ] && while $YADPAK_TXT --text=$"Ref" "$app" <<< "$qry"
 do
