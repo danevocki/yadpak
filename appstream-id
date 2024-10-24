@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2023 Daniel Miedzyblocki
+# Copyright (C) 2023, 2024 Daniel Miedzyblocki
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 #
-# appstream-id <-u|--user|--system ...> ORIGIN ARCH REF ID COLUMN...
-# ASCAT_TMP="$XDG_RUNTIME_DIR"
+# appstream-id {-u|--user|--system ...} <ORIGIN> <ARCH> <REF> <ID> <COLUMN ...>
+# ASID_TMP="$XDG_RUNTIME_DIR"
 
-: ${ASCAT_LOG='/dev/null'}
-exec 1>> "${ASCAT_LOG:-/dev/stdout}" 2>> "${ASCAT_LOG:-/dev/stderr}"
+: ${ASID_LOG='/dev/null'}
+exec 1>> "${ASID_LOG:-/dev/stdout}" 2>> "${ASID_LOG:-/dev/stderr}"
 echo "2:${!2}, 3:${!3}, 4:${!4}, 5:${!5}"
 
 case "$1--system" in # System as default.
@@ -50,8 +50,8 @@ appstream-util status-html "$name.xml" "$name.html"
 rm -f "$name.xml"
 printf -v scr '1,/^<%s/{/^<%s/d}; ' {h1,h1,h2,br}{,}
 exp='{\n\tdisplay: none;\n}'
-scr="$scr/^<style/a\table.summary $exp\n#app-null $exp"
+scr+="/^<style/a\table.summary $exp\n#app-null $exp"
 # sed -i "${ASID_SED-"$scr"}" "$name.html"
 cat <<< "`sed "${ASID_SED-"$scr"}" "$name.html"`" > "$name.html"
 # Terminal close, Terminal=true, terminates new browser instance.
-xdg-open "file://$PWD/$name.html"
+exec xdg-open "file://$PWD/$name.html" # gio open "file://$PWD/$name.html"
